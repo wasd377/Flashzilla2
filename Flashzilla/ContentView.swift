@@ -18,29 +18,11 @@ struct ContentView: View {
     // github test comment
     
     @State private var timeRemaining = 100
-    @State private var isActive = true
+
     @State private var showingEditScreen = false
-    @State private var isCorrect = false
+
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    
-    func newRemoval(card: Card) {
-        
-        let againCard = card
-        
-        vm.cards.removeAll(where: {$0.id == card.id })
-        
-        if isCorrect == false {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                vm.cards.insert(againCard, at: 0)
-                vm.incorrectCards.append(againCard)
-            }
-        }
-        if vm.cards.isEmpty {
-            isActive = false
-        }
-    }
-
 
     var body: some View {
         
@@ -57,11 +39,11 @@ struct ContentView: View {
                     .background(.black.opacity(0.75))
                     .clipShape(Capsule())
                 ZStack{
-                    ForEach(vm.cards) { card in
+                    ForEach(vm.cards, id: \.id) { card in
                         VStack{
-                            CardView(card: card, isCorrect: $isCorrect) {
+                            CardView(card: card, isCorrect: $vm.isCorrect) {
                                 withAnimation {
-                                    newRemoval(card: card)
+                                    vm.newRemoval(card: card)
                                 }
                             }
                         }
@@ -142,7 +124,7 @@ struct ContentView: View {
             }
         }
         .onReceive(timer) { time in
-            guard isActive else { return }
+            guard vm.isActive else { return }
             
             if timeRemaining > 0 {
                 timeRemaining -= 1
@@ -151,10 +133,10 @@ struct ContentView: View {
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 if vm.cards.isEmpty == false {
-                    isActive = true
+                    vm.isActive = true
                 }
             } else {
-                isActive = false
+                vm.isActive = false
             }
             
         }
@@ -165,7 +147,7 @@ struct ContentView: View {
     func resetCards() {
 
     timeRemaining = 100
-        isActive = true
+        vm.isActive = true
         vm.loadData()
     }
 }
